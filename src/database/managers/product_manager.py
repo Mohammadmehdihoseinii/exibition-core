@@ -2,6 +2,7 @@ from .base import ManagerBase
 from src.database.models import Product, ProductImage
 from sqlalchemy import or_, desc
 from datetime import datetime
+from sqlalchemy.orm import joinedload
 
 class ProductManager(ManagerBase):
     def create(self, company_id, **kwargs):
@@ -16,7 +17,6 @@ class ProductManager(ManagerBase):
         product = session.query(Product).filter(Product.id == product_id).first()
         
         if with_images and product:
-            # برای بارگذاری eager images اگر نیاز باشد
             session.expire_on_commit = False
             _ = product.images
         
@@ -26,25 +26,23 @@ class ProductManager(ManagerBase):
     def get_by_company(self, company_id, limit=None):
         """دریافت محصولات یک شرکت"""
         session = self.get_session()
-        query = session.query(Product).filter(Product.company_id == company_id)
-        
+        query = session.query(Product).options(joinedload(Product.images))\
+                    .filter(Product.company_id == company_id)
         if limit:
             query = query.limit(limit)
-        
         products = query.all()
         session.close()
         return products
 
+
     def update(self, product_id, **kwargs):
-        """بروزرسانی محصول"""
         session = self.get_session()
-        product = self.get_by_id(product_id)
+        product = session.query(Product).options(joinedload(Product.images)).filter(Product.id == product_id).first()
         
         if product:
             for key, value in kwargs.items():
                 if hasattr(product, key):
                     setattr(product, key, value)
-            
             product.updated_at = datetime.utcnow()
             session.commit()
             session.refresh(product)
@@ -72,9 +70,7 @@ class ProductManager(ManagerBase):
         session = self.get_session()
         image = ProductImage(product_id=product_id, url=url)
         
-        # اگر اولین تصویر باشد یا primary مشخص شده
         if is_primary:
-            # می‌توانید منطق primary image را اینجا پیاده کنید
             pass
         
         return self.save(session, image)
@@ -121,12 +117,10 @@ class ProductManager(ManagerBase):
             q = q.filter(Product.company_id == company_id)
         
         if category:
-            # اگر category فیلد داشته باشید
             pass
         
         products = q.order_by(desc(Product.created_at)).offset(offset).limit(limit).all()
         
-        # بارگذاری تصاویر برای هر محصول
         for product in products:
             _ = product.images
         
@@ -146,7 +140,6 @@ class ProductManager(ManagerBase):
         """دریافت محصولات ویژه (می‌توانید منطق خود را اضافه کنید)"""
         session = self.get_session()
         
-        # مثال: محصولات شرکت‌های تایید شده
         from src.database.models import CompanyProfile, ApprovalStatusEnum
         
         products = (
@@ -171,7 +164,6 @@ class ProductManager(ManagerBase):
             .all()
         )
         
-        # بارگذاری تصاویر
         for product in products:
             _ = product.images
         
