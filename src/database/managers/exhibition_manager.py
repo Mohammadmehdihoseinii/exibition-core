@@ -12,7 +12,7 @@ class ExhibitionManager(ManagerBase):
         session = self.get_session()
         exhibition = Exhibition(organizer_id=organizer_id, **kwargs)
         return self.save(session, exhibition)
-
+    
     def get_by_id(self, exhibition_id):
         session = self.get_session()
         exhibition = session.query(Exhibition).filter(Exhibition.id == exhibition_id).first()
@@ -27,25 +27,27 @@ class ExhibitionManager(ManagerBase):
         session.close()
         return exhibitions
 
-    def update_status(self, exhibition_id, status):
+    def update(self, exhibition_id: int, **kwargs):
+        """
+        بروزرسانی فیلدهای یک نمایشگاه.
+        kwargs می‌تواند شامل هر فیلدی مثل name, description, status, year و ... باشد.
+        """
         session = self.get_session()
-        exhibition = self.get_by_id(exhibition_id)
-        if exhibition:
-            exhibition.status = status
-            session.commit()
-        session.close()
-        return exhibition
+        exhibition = session.query(Exhibition).filter(Exhibition.id == exhibition_id).first()
+        if not exhibition:
+            session.close()
+            return None
 
-    def get_live_exhibitions(self):
-        session = self.get_session()
-        now = datetime.utcnow()
-        exhibitions = session.query(Exhibition).filter(
-            Exhibition.status == ExpoStatusEnum.live,
-            Exhibition.start_date <= now,
-            Exhibition.end_date >= now
-        ).all()
-        session.close()
-        return exhibitions
+        if "status" in kwargs and kwargs["status"] is not None:
+            try:
+                kwargs["status"] = ExpoStatusEnum(kwargs["status"])
+            except ValueError:
+                kwargs.pop("status")
+
+        for key, value in kwargs.items():
+            setattr(exhibition, key, value)
+
+        return self.save(session, exhibition)
 
     def get_upcoming_exhibitions(self):
         session = self.get_session()
@@ -70,8 +72,7 @@ class ExhibitionManager(ManagerBase):
     def search(self, query=None, category=None, year=None, status=None):
         session = self.get_session()
         q = session.query(Exhibition)
-        
-        if query:
+        if query and not None:
             q = q.filter(
                 or_(
                     Exhibition.name.ilike(f"%{query}%"),
@@ -79,23 +80,37 @@ class ExhibitionManager(ManagerBase):
                 )
             )
         
-        if category:
+        if category and not None:
             q = q.filter(Exhibition.category_level == category)
         
-        if year:
+        if year and not None:
             q = q.filter(Exhibition.year == year)
         
         if status:
-            q = q.filter(Exhibition.status == status)
-        
+            try:
+                status_enum = ExpoStatusEnum(status)
+                q = q.filter(Exhibition.status == status_enum)
+            except ValueError:
+                pass
+
         exhibitions = q.all()
         session.close()
         return exhibitions
 
-
 class ExpoCompanyManager(ManagerBase):
     def register_company(self, exhibition_id, company_id, booth_number=None, hall_name=None, vip_level=VipLevelEnum.normal):
         session = self.get_session()
+        
+        exhibition = session.query(Exhibition).filter(Exhibition.id == exhibition_id).first()
+        if not exhibition:
+            session.close()
+            raise ValueError(f"Exhibition with id {exhibition_id} does not exist")
+        
+        company = session.query(CompanyProfile).filter(CompanyProfile.id == company_id).first()
+        if not company:
+            session.close()
+            raise ValueError(f"Company with id {company_id} does not exist")
+        
         expo_company = ExpoCompany(
             exhibition_id=exhibition_id,
             company_id=company_id,
@@ -104,6 +119,7 @@ class ExpoCompanyManager(ManagerBase):
             vip_level=vip_level
         )
         return self.save(session, expo_company)
+
 
     def get_by_exhibition(self, exhibition_id):
         session = self.get_session()
