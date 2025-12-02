@@ -5,7 +5,6 @@ class FavoriteManager(ManagerBase):
     def add_favorite(self, user_id, favorite_type, target_id):
         session = self.get_session()
         
-        # Check if already favorited
         existing = session.query(UserFavorite).filter(
             UserFavorite.user_id == user_id,
             UserFavorite.favorite_type == favorite_type,
@@ -50,16 +49,6 @@ class FavoriteManager(ManagerBase):
         favorites = query.all()
         session.close()
         return favorites
-
-    def is_favorited(self, user_id, favorite_type, target_id):
-        session = self.get_session()
-        favorite = session.query(UserFavorite).filter(
-            UserFavorite.user_id == user_id,
-            UserFavorite.favorite_type == favorite_type,
-            UserFavorite.target_id == target_id
-        ).first()
-        session.close()
-        return favorite is not None
 
     def count_favorites(self, favorite_type, target_id):
         session = self.get_session()
