@@ -47,7 +47,7 @@ class ExhibitionManager(ManagerBase):
         for key, value in kwargs.items():
             setattr(exhibition, key, value)
 
-        return self.save(session, exhibition)
+        return self.save(session, exhibition, add=False)
 
     def get_upcoming_exhibitions(self):
         session = self.get_session()
