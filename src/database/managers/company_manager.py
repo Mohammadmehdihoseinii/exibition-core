@@ -22,15 +22,22 @@ class CompanyManager(ManagerBase):
         company = session.query(CompanyProfile).filter(CompanyProfile.user_id == user_id).first()
         session.close()
         return company
-
-    def update_status(self, company_id, status):
+    
+    def update(self, company_id, **kwargs):
+        """
+        آپدیت هر فیلدی از CompanyProfile که در kwargs فرستاده شود
+        """
         session = self.get_session()
-        company = self.get_by_id(company_id)
-        if company:
-            company.approval_status = status
-            session.commit()
-        session.close()
-        return company
+        company = session.query(CompanyProfile).filter(CompanyProfile.id == company_id).first()
+        if not company:
+            session.close()
+            raise ValueError(f"Company with id {company_id} does not exist")
+        
+        for key, value in kwargs.items():
+            if hasattr(company, key):
+                setattr(company, key, value)
+        
+        return self.save(session, company, add=False)
 
     def get_pending_companies(self):
         session = self.get_session()
