@@ -10,11 +10,12 @@ from interface.api.users.users import router as auth_router
 from interface.api.exhibition.exhibition import router as exhibition_router
 from interface.api.company.company import router as company_router
 from interface.api.organizer.organizer import router as organizer_router
+from interface.api.favorite.favorite import router as favorite_router
 
 # ----------------- FastAPI App -----------------
 app = FastAPI(
     title="exibition API",
-    version="0.1.1",
+    version="0.5.0",
     description="Exchange API with WebSocket, EventBus, server status, and full docs",
     docs_url="/docs",
     redoc_url=None
@@ -75,6 +76,7 @@ app.include_router(auth_router)
 app.include_router(exhibition_router)
 app.include_router(company_router)
 app.include_router(organizer_router)
+app.include_router(favorite_router)
 
 # ----------------- Endpoints -----------------
 @app.get("/", summary="صفحه اصلی")
