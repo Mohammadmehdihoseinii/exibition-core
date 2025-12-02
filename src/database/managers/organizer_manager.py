@@ -25,21 +25,19 @@ class OrganizerManager(ManagerBase):
 
     def verify_organizer(self, organizer_id):
         session = self.get_session()
-        organizer = self.get_by_id(organizer_id)
+
+        organizer = session.query(OrganizerProfile).filter(
+            OrganizerProfile.id == organizer_id
+        ).first()
+
         if organizer:
             organizer.verified = True
             session.commit()
             session.refresh(organizer)
+
         session.close()
         return organizer
 
-    def get_verified_organizers(self):
-        session = self.get_session()
-        organizers = session.query(OrganizerProfile).filter(
-            OrganizerProfile.verified == True
-        ).all()
-        session.close()
-        return organizers
 
     def search_organizers(self, query=None, country=None):
         session = self.get_session()
