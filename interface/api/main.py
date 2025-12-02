@@ -11,6 +11,7 @@ from interface.api.exhibition.exhibition import router as exhibition_router
 from interface.api.company.company import router as company_router
 from interface.api.organizer.organizer import router as organizer_router
 from interface.api.favorite.favorite import router as favorite_router
+from interface.api.product.product import router as product_router
 
 # ----------------- FastAPI App -----------------
 app = FastAPI(
@@ -77,6 +78,7 @@ app.include_router(exhibition_router)
 app.include_router(company_router)
 app.include_router(organizer_router)
 app.include_router(favorite_router)
+app.include_router(product_router)
 
 # ----------------- Endpoints -----------------
 @app.get("/", summary="صفحه اصلی")
