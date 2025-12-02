@@ -1,58 +1,83 @@
-from .base import ManagerBase
+from src.database.managers.base import ManagerBase
 from src.database.models import User, UserProfile, UserPreferredCategory, UserSocialLink
 from sqlalchemy import or_
+from passlib.context import CryptContext
 
 class UserManager(ManagerBase):
+    def __init__(self, db):
+        self.db = db
+        self.pwd_context = CryptContext(
+            schemes=["argon2"], 
+            deprecated="auto"
+        )
+
+    def hash_password(self, password: str):
+        try:
+            return self.pwd_context.hash(password)
+        except Exception as e:
+            print("❌ Error hashing password:", e)
+            return None
+
+    def verify_password(self, password: str, hashed: str):
+        try:
+            return self.pwd_context.verify(password, hashed)
+        except Exception as e:
+            print("❌ Error verifying password:", e)
+            return False
+
     def create(self, **kwargs):
         session = self.get_session()
-        user = User(**kwargs)
-        return self.save(session, user)
+
+        try:
+            if "email" in kwargs:
+                exists = session.query(User).filter(User.email == kwargs["email"]).first()
+                if exists:
+                    raise ValueError("Email already registered")
+
+            if "password" in kwargs:
+                kwargs["password"] = self.hash_password(kwargs["password"])
+                if not kwargs["password"]:
+                    raise ValueError("Password hashing failed")
+
+            user = User(**kwargs)
+            saved = self.save(session, user)
+            return saved
+
+        except Exception as e:
+            session.rollback()
+            print("❌ Error in create user:", e)
+            raise e
+
+        finally:
+            session.close()
 
     def get_by_id(self, user_id):
         session = self.get_session()
         user = session.query(User).filter(User.id == user_id).first()
         session.close()
         return user
-
-    def get_by_email(self, email):
-        session = self.get_session()
-        user = session.query(User).filter(User.email == email).first()
-        session.close()
-        return user
-
-    def get_by_username_or_email(self, username_or_email):
+    def get_by_username_or_email(self, value):
         session = self.get_session()
         user = session.query(User).filter(
-            or_(
-                User.username == username_or_email,
-                User.email == username_or_email
+            or_(User.username == value,
+                 User.email == value
             )
         ).first()
         session.close()
         return user
 
-    def update_last_login(self, user_id):
-        session = self.get_session()
-        from datetime import datetime
-        session.query(User).filter(User.id == user_id).update(
-            {"last_login": datetime.utcnow()}
-        )
-        session.commit()
-        session.close()
+    
+    
+    def login(self, username_or_email: str, password: str):
+        user = self.get_by_username_or_email(username_or_email)
+        if not user:
+            return None
 
-    def activate_user(self, user_id):
-        session = self.get_session()
-        session.query(User).filter(User.id == user_id).update(
-            {"is_active": True}
-        )
-        session.commit()
-        session.close()
+        if not self.verify_password(password, user.password):
+            return None
 
-    def get_by_role(self, role):
-        session = self.get_session()
-        users = session.query(User).filter(User.role == role).all()
-        session.close()
-        return users
+        return user
+    
 
 
 class UserProfileManager(ManagerBase):
