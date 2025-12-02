@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 # ----------------- Import Your Routers -----------------
 from interface.api.users.users import router as auth_router
-
+from interface.api.exhibition.exhibition import router as exhibition_router
 
 # ----------------- FastAPI App -----------------
 app = FastAPI(
@@ -70,6 +70,8 @@ class EchoResponse(BaseModel):
 
 # ----------------- Include Routers -----------------
 app.include_router(auth_router)
+app.include_router(exhibition_router)
+
 
 # ----------------- Endpoints -----------------
 @app.get("/", summary="صفحه اصلی")
