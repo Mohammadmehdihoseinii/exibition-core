@@ -29,7 +29,7 @@ class ResetPasswordSchema(BaseModel):
     new_password: str
 
 
-# ----------------- Register -----------------
+# -------------------- API Endpoints --------------------
 @router.post("/register")
 def register(req: RegisterSchema):
     try:
@@ -44,8 +44,6 @@ def register(req: RegisterSchema):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-# ----------------- Login -----------------
 @router.post("/login")
 def login(req: LoginSchema):
     user = db_manager.user.login(req.username_or_email, req.password)
@@ -59,8 +57,6 @@ def login(req: LoginSchema):
         "user": {"id": user.id, "username": user.username, "email": user.email}
     }
 
-
-# ----------------- Me -----------------
 @router.get("/me")
 def me(current_user = Depends(auth.get_current_user)):
     return {
@@ -71,8 +67,6 @@ def me(current_user = Depends(auth.get_current_user)):
         "last_login": current_user.last_login
     }
 
-
-# ----------------- Forgot Password -----------------
 @router.post("/forgot-password")
 def forgot_password(req: ForgotPasswordSchema):
     user = db_manager.user.get_by_username_or_email(req.email)
@@ -84,8 +78,6 @@ def forgot_password(req: ForgotPasswordSchema):
     # مثال لینک: https://your-app/reset-password?token=...
     return {"msg": "Password reset token created", "reset_token": token}
 
-
-# ----------------- Reset Password -----------------
 @router.post("/reset-password")
 def reset_password(req: ResetPasswordSchema):
     user = auth.verify_password_reset_token(req.token)

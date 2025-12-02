@@ -38,7 +38,7 @@ class CompanyRegisterSchema(BaseModel):
     vip_level: Optional[VipLevelEnum] = VipLevelEnum.normal
 
 
-# -------------------- Exhibition --------------------
+# -------------------- API Endpoints --------------------
 @router.post("/", response_model=dict)
 def create_exhibition(organizer_id: int, req: ExhibitionCreateSchema):
     exhibition = db_manager.exhibition.create(organizer_id=organizer_id, **req.dict())
@@ -134,7 +134,6 @@ def remove_media(exhibition_id: int, media_id: int):
     session.commit()
     session.close()
     return {"msg": "Media removed successfully"}
-
 
 @router.post("/{exhibition_id}/companies")
 def register_company(exhibition_id: int, req: CompanyRegisterSchema):
