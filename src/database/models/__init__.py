@@ -1,7 +1,7 @@
 from .user import User
 from .profiles import UserProfile, OrganizerProfile, UserPreferredCategory, UserSocialLink
 from .company import CompanyProfile, CompanyDocument
-from .exhibition import Exhibition, ExhibitionTag, ExhibitionMedia, ExpoCompany
+from .exhibition import Exhibition, ExhibitionTag, ExhibitionMedia, ExpoCompany,VerificationDocument
 from .product import Product, ProductImage
 from .misc import UserFavorite, UserView
 from .enums import (
@@ -36,4 +36,5 @@ __all__ = [
     "VipLevelEnum",
     "FavoriteTypeEnum",
     "ViewTargetEnum",
+    "VerificationDocument",
 ]
