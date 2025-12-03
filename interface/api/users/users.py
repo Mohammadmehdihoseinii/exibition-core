@@ -1,19 +1,15 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from pydantic import BaseModel, EmailStr
 from typing import Optional
-
+from src.database.models import RoleEnum
 from src.database.db_manager import db_manager
 from interface.api.users import auth
+from fastapi.responses import JSONResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 # ----------------- Schemas -----------------
-class RegisterSchema(BaseModel):
-    username: str
-    email: EmailStr
-    password: str
-
 
 class LoginSchema(BaseModel):
     username_or_email: str
@@ -31,14 +27,58 @@ class ResetPasswordSchema(BaseModel):
 
 # -------------------- API Endpoints --------------------
 @router.post("/register")
-def register(req: RegisterSchema):
+async def register(
+        email: str = Form(...),
+        password: str = Form(...),
+        role: RoleEnum = Form(...),
+        username: str = Form(...),
+        companyName: str | None = Form(None),
+        industry: str | None = Form(None),
+        contactPhone: str | None = Form(None),
+        responsiblePerson: str | None = Form(None),
+        verificationDoc: UploadFile | None = File(None)
+    ):
     try:
         user = db_manager.user.create(
-            username=req.username,
-            email=req.email,
-            password=req.password,
+            username=username,
+            email=email,
+            password=password,
+            role=role.value
         )
-        return {"msg": "User created", "id": user.id}
+        token = auth.create_access_token(user_id=user.id)
+
+        if role.value == RoleEnum.exhibitor:
+            db_manager.company.create(
+                user_id=user.id,
+                company_name=companyName,
+                industry_category=industry,
+            )
+            db_manager.user.update(user.id,mobilephone=contactPhone)
+
+        if role.value == RoleEnum.organizer:
+            verification_url = None
+            if verificationDoc:
+                verification_doc_record = db_manager.verification.save_file(
+                    user_id=user.id,
+                    uploaded_file=verificationDoc
+                )
+                verification_url = verification_doc_record.file_url
+
+            db_manager.organizer.create(
+                user_id=user.id,
+                organization_name=username,
+                responsible_person=responsiblePerson or "",
+                verification_doc=verification_url
+            )
+
+        return JSONResponse(
+            status_code=201,
+            content={
+                "success": True,
+                "user": {"id": user.id, "email": user.email, "role": user.role.name,"token":token},
+            },
+        )
+
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -48,14 +88,24 @@ def register(req: RegisterSchema):
 def login(req: LoginSchema):
     user = db_manager.user.login(req.username_or_email, req.password)
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        return {
+            "success": False,
+            "error": "Incorrect username or password"
+        }
 
     token = auth.create_access_token(user_id=user.id)
+
     return {
+        "success": True,
         "access_token": token,
         "token_type": "bearer",
-        "user": {"id": user.id, "username": user.username, "email": user.email}
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email
+        }
     }
+
 
 @router.get("/me")
 def me(current_user = Depends(auth.get_current_user)):
