@@ -18,9 +18,8 @@ class User(BaseModel):
 
     tokens = relationship("Token", back_populates="user")
     sessions = relationship("TrackingSession", back_populates="user")
-
     user_profile = relationship("UserProfile", back_populates="user", uselist=False)
     company_profile = relationship("CompanyProfile", back_populates="user", uselist=False)
     organizer_profile = relationship("OrganizerProfile", back_populates="user", uselist=False)
-
     favorites = relationship("UserFavorite", back_populates="user")
+    verification_documents = relationship("VerificationDocument",back_populates="user",cascade="all, delete-orphan")
