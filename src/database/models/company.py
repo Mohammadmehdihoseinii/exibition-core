@@ -16,7 +16,6 @@ class CompanyProfile(BaseModel):
     industry_category = Column(String, nullable=True)
     description = Column(Text, nullable=True)
     approval_status = Column(Enum(ApprovalStatusEnum), default=ApprovalStatusEnum.pending)
-    created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="company_profile")
     products = relationship("Product", back_populates="company")
