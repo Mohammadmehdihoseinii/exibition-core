@@ -2,10 +2,11 @@ from .base import ManagerBase
 from src.database.models import (
     Exhibition, ExhibitionTag, ExhibitionMedia, 
     ExpoCompany, ExpoStatusEnum, VipLevelEnum,
-    OrganizerProfile, CompanyProfile
+    VerificationDocument, CompanyProfile
 )
 from sqlalchemy import or_, and_
 from datetime import datetime
+import os
 
 class ExhibitionManager(ManagerBase):
     def create(self, organizer_id, **kwargs):
@@ -167,3 +168,47 @@ class ExpoCompanyManager(ManagerBase):
         ).all()
         session.close()
         return companies
+    
+class VerificationManager(ManagerBase):
+    
+    def save_file(self, user_id: int, uploaded_file) -> VerificationDocument:
+        """
+        ذخیره فایل آپلود شده و ایجاد رکورد در جدول VerificationDocument
+        :param user_id: شناسه کاربر یا سازمان
+        :param uploaded_file: فایل آپلود شده (UploadFile)
+        :return: نمونه VerificationDocument ذخیره شده
+        """
+        session = self.get_session()
+        try:
+            # پوشه ذخیره فایل
+            upload_dir = "uploads/verification_docs"
+            os.makedirs(upload_dir, exist_ok=True)
+
+            # ساخت نام یکتا برای فایل
+            timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+            filename = f"{user_id}_{timestamp}_{uploaded_file.filename}"
+            file_path = os.path.join(upload_dir, filename)
+
+            # نوشتن فایل روی دیسک
+            with open(file_path, "wb") as f:
+                f.write(uploaded_file.file.read())  # اگر از FastAPI UploadFile است
+
+            # ساخت رکورد در دیتابیس
+            verification_doc = VerificationDocument(
+                user_id=user_id,
+                filename=uploaded_file.filename,
+                file_url=file_path
+            )
+            session.add(verification_doc)
+            session.commit()
+            session.refresh(verification_doc)
+
+            return verification_doc
+
+        except Exception as e:
+            session.rollback()
+            print("❌ Error saving verification document:", e)
+            raise e
+
+        finally:
+            session.close()
