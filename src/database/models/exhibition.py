@@ -3,6 +3,12 @@ from sqlalchemy.orm import relationship
 
 from src.database.database import BaseModel
 from src.database.models.enums import ExpoStatusEnum, VipLevelEnum
+import enum
+
+class VerificationStatusEnum(str, enum.Enum):
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
 
 class Exhibition(BaseModel):
     __tablename__ = "exhibitions"
@@ -51,3 +57,13 @@ class ExpoCompany(BaseModel):
 
     exhibition = relationship("Exhibition", back_populates="companies")
     company = relationship("CompanyProfile", back_populates="exhibitions_participated")
+
+class VerificationDocument(BaseModel):
+    __tablename__ = "verification_documents"
+
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    filename = Column(String, nullable=False)
+    file_url = Column(String, nullable=False)
+    status = Column(Enum(VerificationStatusEnum), default=VerificationStatusEnum.pending)
+
+    user = relationship("User", back_populates="verification_documents")
