@@ -56,6 +56,7 @@ class UserManager(ManagerBase):
         user = session.query(User).filter(User.id == user_id).first()
         session.close()
         return user
+    
     def get_by_username_or_email(self, value):
         session = self.get_session()
         user = session.query(User).filter(
@@ -65,6 +66,44 @@ class UserManager(ManagerBase):
         ).first()
         session.close()
         return user
+    
+    def update(self, user_id: int, **kwargs):
+        """
+        به‌روزرسانی اطلاعات کاربر بر اساس user_id.
+        اگر پسورد تغییر کند، هش می‌شود.
+        سایر فیلدها مستقیماً آپدیت می‌شوند.
+        """
+        session = self.get_session()
+        try:
+            user = session.query(User).filter(User.id == user_id).first()
+            if not user:
+                raise ValueError(f"User with id {user_id} not found")
+
+            # هش کردن پسورد در صورت وجود
+            if "password" in kwargs:
+                hashed = self.hash_password(kwargs["password"])
+                if not hashed:
+                    raise ValueError("Password hashing failed")
+                kwargs["password"] = hashed
+
+            # بروزرسانی بقیه فیلدها
+            for key, value in kwargs.items():
+                if hasattr(user, key):
+                    setattr(user, key, value)
+                else:
+                    print(f"⚠ Skipping unknown field: {key}")
+
+            session.commit()
+            session.refresh(user)
+            return user
+
+        except Exception as e:
+            session.rollback()
+            print("❌ Error updating user:", e)
+            raise e
+
+        finally:
+            session.close()
 
     
     
