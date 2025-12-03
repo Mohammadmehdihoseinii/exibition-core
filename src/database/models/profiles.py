@@ -39,7 +39,6 @@ class UserSocialLink(BaseModel):
 
     user_profile = relationship("UserProfile", back_populates="social_links")
 
-
 class OrganizerProfile(BaseModel):
     __tablename__ = "organizers"
 
@@ -49,6 +48,9 @@ class OrganizerProfile(BaseModel):
     website = Column(String, nullable=True)
     country = Column(String, nullable=True)
     verified = Column(Boolean, default=False)
+    
+    responsible_person = Column(String, nullable=True)
+    verification_doc = Column(String, nullable=True)
 
     user = relationship("User", back_populates="organizer_profile")
     exhibitions = relationship("Exhibition", back_populates="organizer")
