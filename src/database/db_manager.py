@@ -1,7 +1,7 @@
 from src.database.database import Database
 from src.database.managers.user_manager import UserManager, UserProfileManager
 from src.database.managers.view_manager import ViewManager
-from src.database.managers.exhibition_manager import ExhibitionManager, ExpoCompanyManager
+from src.database.managers.exhibition_manager import ExhibitionManager, ExpoCompanyManager,VerificationManager
 from src.database.managers.company_manager import CompanyManager
 from src.database.managers.product_manager import ProductManager
 from src.database.managers.organizer_manager import OrganizerManager
@@ -28,7 +28,7 @@ class DBManager:
         self.product = ProductManager(self.db)
         self.organizer = OrganizerManager(self.db)
         self.favorite = FavoriteManager(self.db)
-        
+        self.verification = VerificationManager(self.db)
         # برای backward compatibility
         self.company_manager = self.company
         self.product_manager = self.product
