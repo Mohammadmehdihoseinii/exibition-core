@@ -45,17 +45,28 @@ async def register(
             password=password,
             role=role.value
         )
+
         token = auth.create_access_token(user_id=user.id)
 
-        if role.value == RoleEnum.exhibitor:
+        if role == RoleEnum.exhibitor:
+
+            if not companyName:
+                raise HTTPException(
+                    status_code=400,
+                    detail="companyName is required for exhibitor role"
+                )
+
             db_manager.company.create(
                 user_id=user.id,
                 company_name=companyName,
-                industry_category=industry,
+                industry_category=industry
             )
-            db_manager.user.update(user.id,mobilephone=contactPhone)
 
-        if role.value == RoleEnum.organizer:
+            if contactPhone:
+                db_manager.user.update(user.id, mobilephone=contactPhone)
+
+        if role == RoleEnum.organizer:
+
             verification_url = None
             if verificationDoc:
                 verification_doc_record = db_manager.verification.save_file(
@@ -75,7 +86,12 @@ async def register(
             status_code=201,
             content={
                 "success": True,
-                "user": {"id": user.id, "email": user.email, "role": user.role.name,"token":token},
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "role": user.role.name,
+                    "token": token
+                },
             },
         )
 
@@ -102,6 +118,7 @@ def login(req: LoginSchema):
         "user": {
             "id": user.id,
             "username": user.username,
+            "role": user.role.name,
             "email": user.email
         }
     }
