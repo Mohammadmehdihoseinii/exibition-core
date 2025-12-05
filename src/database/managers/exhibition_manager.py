@@ -97,6 +97,41 @@ class ExhibitionManager(ManagerBase):
         exhibitions = q.all()
         session.close()
         return exhibitions
+    
+    def list_exhibition_years(self):
+        session = self.get_session()
+        exhibitions = session.query(Exhibition).all()
+
+        year_counts = {}
+
+        for expo in exhibitions:
+            start_year = expo.start_date.year
+            end_year = expo.end_date.year
+
+            for year in range(start_year, end_year + 1):
+                year_counts[year] = year_counts.get(year, 0) + 1
+
+        result = [
+            {"year": year, "count": count}
+            for year, count in sorted(year_counts.items())
+        ]
+        session.close()
+        return result
+
+    def list_categories(self):
+        session = self.get_session()
+
+        categories = (
+            session.query(Exhibition.category_level)
+            .filter(Exhibition.category_level.isnot(None))
+            .distinct()
+            .all()
+        )
+
+        session.close()
+
+        return [c[0] for c in categories]
+
 
 class ExpoCompanyManager(ManagerBase):
     def register_company(self, exhibition_id, company_id, booth_number=None, hall_name=None, vip_level=VipLevelEnum.normal):
