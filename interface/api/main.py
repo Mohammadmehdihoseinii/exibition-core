@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import asyncio
 import os
@@ -73,6 +74,7 @@ class EchoResponse(BaseModel):
 
 
 # ----------------- Include Routers -----------------
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 app.include_router(auth_router)
 app.include_router(exhibition_router)
 app.include_router(company_router)
