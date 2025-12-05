@@ -37,17 +37,9 @@ class Database:
         """
         تمام مدل‌ها را import می‌کنیم تا SQLAlchemy آنها را register کند
         """
-        from src.database.models.user import User
-        from src.database.models.profiles import (
-            UserProfile, UserPreferredCategory, UserSocialLink,
-            OrganizerProfile
-        )
-        from src.database.models.company import CompanyProfile, CompanyDocument
-        from src.database.models.exhibition import Exhibition, ExhibitionTag, ExhibitionMedia, ExpoCompany
-        from src.database.models.product import Product, ProductImage
-        from src.database.models.misc import UserFavorite, UserView
+        import src.database.models
 
         Base.metadata.create_all(bind=self.engine)
-
+        
     def get_session(self):
         return self.SessionLocal()
