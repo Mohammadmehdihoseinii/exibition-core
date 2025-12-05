@@ -5,6 +5,7 @@ from src.database.models import (
     VerificationDocument, CompanyProfile
 )
 from sqlalchemy import or_, and_
+from sqlalchemy.orm import joinedload
 from datetime import datetime
 import os
 
@@ -203,6 +204,39 @@ class ExpoCompanyManager(ManagerBase):
         ).all()
         session.close()
         return companies
+    
+    def list_companies_with_details(self, exhibition_id):
+        """
+        لیست شرکت‌های یک نمایشگاه همراه با اطلاعات غرفه و پروفایل شرکت.
+        """
+        session = self.get_session()
+        try:
+            companies = session.query(ExpoCompany).options(
+                joinedload(ExpoCompany.company)
+            ).filter(
+                ExpoCompany.exhibition_id == exhibition_id
+            ).all()
+
+            result = []
+            for expo_company in companies:
+                company = expo_company.company
+                result.append({
+                    "id": expo_company.id,
+                    "company_id": company.id,
+                    "name": company.company_name,
+                    "logo": company.logo or "/static/default-logo-exhibition.jpg",
+                    "description": company.description,
+                    "category_level2": company.industry_category,
+                    "category_level3": company.industry_category,
+                    "quick_intro_video": None,
+                    "booth_number": expo_company.booth_number,
+                    "hall_name": expo_company.hall_name,
+                    "vip_level": expo_company.vip_level.value if expo_company.vip_level else "normal"
+                })
+
+            return result
+        finally:
+            session.close()
     
 class VerificationManager(ManagerBase):
     
