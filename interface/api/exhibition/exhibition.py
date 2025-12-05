@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
-
+from sqlalchemy.orm import joinedload
 from src.database.db_manager import db_manager
 from src.database.models import ExhibitionTag, ExhibitionMedia, VipLevelEnum, ExpoStatusEnum
 router = APIRouter(prefix="/exhibition", tags=["exhibition"])
@@ -177,16 +177,11 @@ def register_company(exhibition_id: int, req: CompanyRegisterSchema):
 
 @router.get("/{exhibition_id}/companies")
 def list_companies(exhibition_id: int):
-    companies = db_manager.expo_company.get_by_exhibition(exhibition_id)
-    return [
-        {
-            "id": c.id,
-            "company_id": c.company_id,
-            "booth_number": c.booth_number,
-            "hall_name": c.hall_name,
-            "vip_level": c.vip_level
-        } for c in companies
-    ]
+    companies = db_manager.expo_company.list_companies_with_details(exhibition_id)
+    if not companies:
+        raise HTTPException(status_code=404, detail="No companies found")
+    return companies
+
 
 @router.put("/companies/{expo_company_id}")
 def update_company_info(expo_company_id: int, req: CompanyRegisterSchema):
