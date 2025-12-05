@@ -14,6 +14,7 @@ class ApprovalStatusEnum(str, enum.Enum):
 class ExpoStatusEnum(str, enum.Enum):
     draft = "draft"
     live = "live"
+    upcoming = "upcoming"
     ended = "ended"
 
 class VipLevelEnum(str, enum.Enum):
