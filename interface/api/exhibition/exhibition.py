@@ -44,6 +44,21 @@ def create_exhibition(organizer_id: int, req: ExhibitionCreateSchema):
     exhibition = db_manager.exhibition.create(organizer_id=organizer_id, **req.dict())
     return {"id": exhibition.id, "name": exhibition.name}
 
+@router.get("/years", response_model=List[int])
+def get_exhibition_years():
+    try:
+        data = db_manager.exhibition.list_exhibition_years()
+        years = [item['year'] for item in data]
+        return years
+    except Exception as e:
+        print("Error fetching years:", e)
+        return []
+
+@router.get("/categories", response_model=List[str])
+def get_exhibition_categories():
+    categories = db_manager.exhibition.list_categories()
+    return list(categories)
+
 @router.get("/{exhibition_id}", response_model=dict)
 def get_exhibition(exhibition_id: int):
     exhibition = db_manager.exhibition.get_by_id(exhibition_id)
@@ -60,27 +75,35 @@ def get_exhibition(exhibition_id: int):
         "status": exhibition.status
     }
 
+
 @router.get("/", response_model=List[dict])
 def list_exhibitions(
-        query: Optional[str] = None,
-        category: Optional[str] = None,
-        year: Optional[int] = None,
-        status: Optional[ExpoStatusEnum] = Query(None)
-    ):
+    query: Optional[str] = None,
+    category: Optional[str] = None,
+    year: Optional[int] = None,
+    status: Optional[ExpoStatusEnum] = Query(None)
+):
     exhibitions = db_manager.exhibition.search(
         query=query,
         category=category,
         year=year,
         status=status.value if status else None
-
     )
+
     return [
         {
             "id": e.id,
-            "name": e.name,
+            "title": e.name,
             "description": e.description,
             "status": e.status.value,
-            "year": e.year
+            "category": e.category_level or "Uncategorized",
+            "year": e.year,
+            "startDate": e.start_date.isoformat(),
+            "endDate": e.end_date.isoformat(),
+            "imageUrl": e.banner_image or "/static/default-banner-exhibition.jpg",
+            "attendees": getattr(e, "attendees", None),
+            "exhibitors": getattr(e, "exhibitors", None),
+            "location": getattr(e, "location", "Unknown")
         } for e in exhibitions
     ]
 
