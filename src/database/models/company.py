@@ -1,10 +1,15 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, Enum, Table
 from sqlalchemy.orm import relationship
 from datetime import datetime
-
 from src.database.database import BaseModel
 from src.database.models.enums import ApprovalStatusEnum
 
+company_tag_association = Table(
+    "company_tag_association",
+    BaseModel.metadata,
+    Column("company_id", Integer, ForeignKey("company_profiles.id"), primary_key=True),
+    Column("tag_id", Integer, ForeignKey("company_tags.id"), primary_key=True),
+)
 
 class CompanyProfile(BaseModel):
     __tablename__ = "company_profiles"
@@ -21,13 +26,28 @@ class CompanyProfile(BaseModel):
     websites = relationship("CompanyWebsite", back_populates="company", cascade="all, delete-orphan")
     addresses = relationship("CompanyAddress", back_populates="company", cascade="all, delete-orphan")
     phones = relationship("CompanyPhone", back_populates="company", cascade="all, delete-orphan")
-    tags = relationship("CompanyTag", back_populates="company", cascade="all, delete-orphan")
+    tags = relationship(
+        "CompanyTag",
+        secondary=company_tag_association,
+        back_populates="companies"
+    )
     videos = relationship("CompanyVideo", back_populates="company", cascade="all, delete-orphan")
     brochures = relationship("CompanyBrochure", back_populates="company", cascade="all, delete-orphan")
     knowledge_files = relationship("CompanyKnowledgeFile", back_populates="company", cascade="all, delete-orphan")
     documents = relationship("CompanyDocument", back_populates="company_profile")
     products = relationship("Product", back_populates="company")
     exhibitions_participated = relationship("ExpoCompany", back_populates="company")
+
+class CompanyTag(BaseModel):
+    __tablename__ = "company_tags"
+
+    name = Column(String, unique=True, nullable=False)
+
+    companies = relationship(
+        "CompanyProfile",
+        secondary=company_tag_association,
+        back_populates="tags"
+    )
 
 class CompanyWebsite(BaseModel):
     __tablename__ = "company_websites"
@@ -56,14 +76,6 @@ class CompanyPhone(BaseModel):
 
     company = relationship("CompanyProfile", back_populates="phones")
 
-class CompanyTag(BaseModel):
-    __tablename__ = "company_tags"
-
-    company_id = Column(Integer, ForeignKey("company_profiles.id"), nullable=False)
-    tag = Column(String, nullable=False)
-
-    company = relationship("CompanyProfile", back_populates="tags")
-
 class CompanyVideo(BaseModel):
     __tablename__ = "company_videos"
 
@@ -84,7 +96,6 @@ class CompanyBrochure(BaseModel):
 
     company = relationship("CompanyProfile", back_populates="brochures")
 
-
 class CompanyKnowledgeFile(BaseModel):
     __tablename__ = "company_knowledge_files"
 
@@ -94,7 +105,6 @@ class CompanyKnowledgeFile(BaseModel):
     file_url = Column(String, nullable=False)
 
     company = relationship("CompanyProfile", back_populates="knowledge_files")
-
 
 class CompanyDocument(BaseModel):
     __tablename__ = "company_documents"

@@ -1,6 +1,5 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum, Table
 from sqlalchemy.orm import relationship
-
 from src.database.database import BaseModel
 from src.database.models.enums import ExpoStatusEnum, VipLevelEnum
 import enum
@@ -10,6 +9,15 @@ class VerificationStatusEnum(str, enum.Enum):
     approved = "approved"
     rejected = "rejected"
 
+# -------------------- MANY-TO-MANY TABLE --------------------
+exhibition_tag_table = Table(
+    "exhibition_tags_association",
+    BaseModel.metadata,
+    Column("exhibition_id", Integer, ForeignKey("exhibitions.id"), primary_key=True),
+    Column("tag_id", Integer, ForeignKey("exhibition_tags.id"), primary_key=True),
+)
+
+# -------------------- MODELS --------------------
 class Exhibition(BaseModel):
     __tablename__ = "exhibitions"
 
@@ -26,16 +34,23 @@ class Exhibition(BaseModel):
 
     organizer = relationship("OrganizerProfile", back_populates="exhibitions")
     companies = relationship("ExpoCompany", back_populates="exhibition")
-    tags = relationship("ExhibitionTag", back_populates="exhibition")
+    tags = relationship(
+        "ExhibitionTag",
+        secondary=exhibition_tag_table,
+        back_populates="exhibitions"
+    )
     media_gallery = relationship("ExhibitionMedia", back_populates="exhibition")
 
 class ExhibitionTag(BaseModel):
     __tablename__ = "exhibition_tags"
 
-    exhibition_id = Column(Integer, ForeignKey("exhibitions.id"), nullable=False)
-    tag = Column(String, nullable=False)
+    name = Column(String, unique=True, nullable=False)
 
-    exhibition = relationship("Exhibition", back_populates="tags")
+    exhibitions = relationship(
+        "Exhibition",
+        secondary=exhibition_tag_table,
+        back_populates="tags"
+    )
 
 class ExhibitionMedia(BaseModel):
     __tablename__ = "exhibition_media"

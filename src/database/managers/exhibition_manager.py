@@ -61,10 +61,41 @@ class ExhibitionManager(ManagerBase):
         session.close()
         return exhibitions
 
-    def add_tag(self, exhibition_id, tag):
+    def add_tag(self, exhibition_id, tag_name):
         session = self.get_session()
-        exhibition_tag = ExhibitionTag(exhibition_id=exhibition_id, tag=tag)
-        return self.save(session, exhibition_tag)
+        exhibition = session.query(Exhibition).filter_by(id=exhibition_id).first()
+        if not exhibition:
+            session.close()
+            return None
+
+        self._add_tag_to_exhibition(session, exhibition, tag_name)
+        session.commit()
+        session.close()
+        return True
+
+    def remove_tag(self, exhibition_id, tag_name):
+        session = self.get_session()
+        exhibition = session.query(Exhibition).filter_by(id=exhibition_id).first()
+        if not exhibition:
+            session.close()
+            return None
+
+        tag = session.query(ExhibitionTag).filter_by(name=tag_name).first()
+        if tag and tag in exhibition.tags:
+            exhibition.tags.remove(tag)
+
+        session.commit()
+        session.close()
+        return True
+
+    def _add_tag_to_exhibition(self, session, exhibition, tag_name):
+        tag = session.query(ExhibitionTag).filter_by(name=tag_name).first()
+        if not tag:
+            tag = ExhibitionTag(name=tag_name)
+            session.add(tag)
+            session.flush()
+        if tag not in exhibition.tags:
+            exhibition.tags.append(tag)
 
     def add_media(self, exhibition_id, media_url):
         session = self.get_session()

@@ -41,7 +41,6 @@ class CompanyManager(ManagerBase):
                 selectinload(CompanyProfile.websites),
                 selectinload(CompanyProfile.addresses),
                 selectinload(CompanyProfile.phones),
-                selectinload(CompanyProfile.tags),
                 selectinload(CompanyProfile.videos),
                 selectinload(CompanyProfile.brochures),
                 selectinload(CompanyProfile.knowledge_files),
@@ -49,6 +48,7 @@ class CompanyManager(ManagerBase):
             .filter(CompanyProfile.user_id == user_id)
             .first()
         )
+        tags = self.list_tags()
 
     def update(self, company_id, **kwargs):
         session = self.get_session()
@@ -141,13 +141,65 @@ class CompanyManager(ManagerBase):
         return self.get_child_list(CompanyPhone, company_id)
 
     def add_tag(self, company_id, tag):
-        return self.add_child(CompanyTag, company_id, tag=tag)
+        session = self.get_session()
+        try:
+            tag_name = tag  # مقدار ورودی را جدا نگه می‌داریم
+
+            # بررسی می‌کنیم آیا تگ از قبل وجود دارد
+            existing_tag = session.query(CompanyTag).filter(CompanyTag.name == tag_name).first()
+
+            if not existing_tag:
+                new_tag = CompanyTag(name=tag_name)
+                session.add(new_tag)
+                session.flush()  # ارسال تغییرات به DB
+                tag_obj = new_tag
+            else:
+                tag_obj = existing_tag
+
+            # پیدا کردن شرکت
+            company = session.query(CompanyProfile).filter(CompanyProfile.id == company_id).first()
+            if not company:
+                raise ValueError("Company not found")
+
+            # اضافه کردن تگ به شرکت اگر هنوز وجود ندارد
+            if tag_obj not in company.tags:
+                company.tags.append(tag_obj)
+
+            session.commit()
+            session.refresh(tag_obj)  # شیء تگ را رفرش می‌کنیم
+            return tag_obj
+
+        except Exception as e:
+            session.rollback()
+            raise e
+
+        finally:
+            session.close()
+
+
 
     def delete_tag(self, tag_id):
         return self.delete_child(CompanyTag, tag_id)
 
-    def list_tags(self, company_id):
-        return self.get_child_list(CompanyTag, company_id)
+    def list_tags(self, company_id: int):
+        session = self.get_session()
+        try:
+            company = (
+                session.query(CompanyProfile)
+                .options(selectinload(CompanyProfile.tags))
+                .filter(CompanyProfile.id == company_id)
+                .first()
+            )
+
+            if not company:
+                return []
+
+            # برگرداندن لیست تگ‌ها به شکل {id, name}
+            return [{"id": t.id, "name": t.name} for t in company.tags]
+
+        finally:
+            session.close()
+
 
     def add_video(self, company_id, title, orginal_name, video_url):
         return self.add_child(

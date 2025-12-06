@@ -219,12 +219,12 @@ def add_tag(company_id: int, payload: CompanyTagSchema):
         t = db_manager.company.add_tag(company_id, tag=payload.tag)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-    return {"message": "Tag added", "tag": {"id": t.id, "tag": t.tag}}
+    return {"message": "Tag added", "tag": {"id": t.id, "name": t.name}}
 
 @router.get("/{company_id}/tags", response_model=List[dict])
 def list_tags(company_id: int):
     tags = db_manager.company.list_tags(company_id)
-    return [{"id": t.id, "tag": t.tag} for t in tags]
+    return tags
 
 @router.delete("/tag/{tag_id}", response_model=dict)
 def delete_tag(tag_id: int):
