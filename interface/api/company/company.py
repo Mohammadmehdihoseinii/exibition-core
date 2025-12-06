@@ -117,7 +117,7 @@ def serialize_company(company) -> Dict[str, Any]:
         "phones": _serialize_list(getattr(company, "phones", []), ["name", "phone_number"]),
         "tags": _serialize_list(getattr(company, "tags", []), ["tag"]),
         "videos": _serialize_list(getattr(company, "videos", []), ["name", "video_url"]),
-        "brochures": _serialize_list(getattr(company, "brochures", []), ["name", "file_url"]),
+        "brochures": _serialize_list(getattr(company, "brochures", []), ["title", "file_url"]),
         "knowledge_files": _serialize_list(getattr(company, "knowledge_files", []), ["title", "file_url"]),
         "documents": _serialize_list(getattr(company, "documents", []), ["name", "url"]),
     }
@@ -392,7 +392,6 @@ async def add_brochure(
             file_url=file_location,
             orginal_name=file.filename
         )        
-        print(f"company_id = {company_id} / name = {title} / file saved as {unique_filename}")
         return {
             "message": "Brochure added",
             "brochure": {
