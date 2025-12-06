@@ -1,19 +1,28 @@
 from .user import User
-from .profiles import UserProfile, OrganizerProfile, UserPreferredCategory, UserSocialLink
+from .profiles import (UserProfile,
+                       OrganizerProfile,
+                       UserPreferredCategory,
+                       UserSocialLink,
+                       )
 from .company import (
     CompanyProfile,
     CompanyDocument,
     CompanyWebsite,
     CompanyAddress,
     CompanyPhone,
-    CompanyTag,
     CompanyVideo,
     CompanyBrochure,
+    CompanyTag,
     CompanyKnowledgeFile
 )
-
 from .exhibition import Exhibition, ExhibitionTag, ExhibitionMedia, ExpoCompany, VerificationDocument
-from .product import Product, ProductImage
+from .product import (Product, 
+                      ProductImage,
+                      ProductBrochure,
+                      ProductTag,
+                      product_tag_association
+                      )
+
 from .misc import UserFavorite, UserView
 from .enums import (
     RoleEnum, ApprovalStatusEnum, ExpoStatusEnum, 
@@ -50,6 +59,9 @@ __all__ = [
     # Product
     "Product",
     "ProductImage",
+    "ProductBrochure",
+    "ProductTag",
+    "product_tag_association",
 
     # Misc
     "UserFavorite",
